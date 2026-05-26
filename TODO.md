@@ -19,7 +19,7 @@ _Nothing currently in progress._
 - [ ] **Copy result to clipboard** — add a copy button to each result card
 - [ ] **Share link** — encode the source in the URL so results can be shared
 - [ ] **Dark/light theme toggle**
-- [ ] **Keyboard shortcut** — Ctrl+Enter to trigger analysis
+- [x] **Keyboard shortcut** — Ctrl+Enter to trigger analysis
 
 ### Infrastructure
 - [ ] **Mobile layout** — the current UI is desktop-only
