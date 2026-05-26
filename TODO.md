@@ -7,6 +7,7 @@ _Nothing currently in progress._
 
 ### Features
 - [ ] **Add syntax highlighting to the code editor** — replace the plain `<textarea>` with a code editor component (e.g. CodeMirror or Monaco) that highlights Python syntax in real time
+- [ ] **Python indentation in the textarea** — intercept Tab key to insert 4 spaces instead of moving focus; also handle Enter key to auto-indent to the current line's indentation level
 - [ ] **LLM-based analysis** — pivot from static AST analysis to Claude API for richer, more accurate explanations and support for complex algorithm patterns
 - [ ] **Support `async def` functions** — the current AST visitor only handles `def`; async functions are silently ignored
 - [ ] **Support class methods** — detect and analyze methods inside class definitions, not just top-level functions
