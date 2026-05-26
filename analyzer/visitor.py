@@ -74,6 +74,9 @@ class ComplexityVisitor(ast.NodeVisitor):
     @staticmethod
     def _has_floor_div(node: ast.While) -> bool:
         return any(
-            isinstance(child, ast.BinOp) and isinstance(child.op, ast.FloorDiv)
+            isinstance(child, ast.BinOp)
+            and isinstance(child.op, ast.FloorDiv)
+            and isinstance(child.left, ast.BinOp)
+            and isinstance(child.left.op, ast.Add)
             for child in ast.walk(node)
         )

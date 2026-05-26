@@ -153,3 +153,15 @@ def matrix(n):
 def test_no_collection_space_is_o1():
     v = _analyze("def foo(x): return x * 2")
     assert v.space_complexity() == "O(1)"
+
+
+def test_floor_div_without_addition_is_not_ologn():
+    source = """
+def foo(n):
+    i = 0
+    while i < n:
+        x = n // 2
+        i += 1
+"""
+    v = _analyze(source)
+    assert v.time_complexity() == "O(n)"
