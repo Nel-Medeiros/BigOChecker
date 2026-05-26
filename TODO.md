@@ -6,8 +6,8 @@ _Nothing currently in progress._
 ## Planned
 
 ### Features
-- [ ] **Add syntax highlighting to the code editor** — replace the plain `<textarea>` with a code editor component (e.g. CodeMirror or Monaco) that highlights Python syntax in real time
-- [ ] **Python indentation in the textarea** — intercept Tab key to insert 4 spaces instead of moving focus; also handle Enter key to auto-indent to the current line's indentation level
+- [x] **Add syntax highlighting to the code editor** — CodeMirror 6 with Catppuccin Mocha theme and Python language support
+- [x] **Python indentation in the textarea** — Tab → 4 spaces and Enter auto-indent handled natively by CodeMirror
 - [ ] **LLM-based analysis** — pivot from static AST analysis to Claude API for richer, more accurate explanations and support for complex algorithm patterns
 - [ ] **Support `async def` functions** — the current AST visitor only handles `def`; async functions are silently ignored
 - [ ] **Support class methods** — detect and analyze methods inside class definitions, not just top-level functions
@@ -19,7 +19,7 @@ _Nothing currently in progress._
 - [ ] **Copy result to clipboard** — add a copy button to each result card
 - [ ] **Share link** — encode the source in the URL so results can be shared
 - [ ] **Dark/light theme toggle**
-- [ ] **Keyboard shortcut** — Ctrl+Enter to trigger analysis
+- [x] **Keyboard shortcut** — Ctrl+Enter to trigger analysis
 
 ### Infrastructure
 - [ ] **Mobile layout** — the current UI is desktop-only
