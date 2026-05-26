@@ -75,23 +75,9 @@
       font-weight: 600;
     }
 
-    textarea {
+    #editor {
       width: 100%;
-      height: 220px;
-      background: #181825;
-      border: 1px solid #313244;
-      border-radius: 8px;
-      color: #cdd6f4;
-      font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
-      font-size: 0.88rem;
-      padding: 16px;
-      resize: vertical;
-      outline: none;
-      line-height: 1.6;
-      transition: border-color 0.15s;
     }
-
-    textarea:focus { border-color: #89b4fa; }
 
     .actions {
       margin-top: 14px;
@@ -260,110 +246,186 @@
 </header>
 
 <main>
-  <label class="field-label" for="code">Paste your Python algorithm</label>
-  <textarea id="code" spellcheck="false" placeholder="def bubble_sort(arr):&#10;    for i in range(len(arr)):&#10;        for j in range(len(arr) - i - 1):&#10;            if arr[j] > arr[j + 1]:&#10;                arr[j], arr[j + 1] = arr[j + 1], arr[j]"></textarea>
+  <label class="field-label">Paste your Python algorithm</label>
+  <div id="editor"></div>
 
   <div class="actions">
     <button id="analyze-btn" disabled>Analyze →</button>
-    <span class="hint">Python only · top-level def functions · async def not supported</span>
+    <span class="hint">Python only · top-level def functions · async def not supported · Ctrl+Enter to analyze</span>
   </div>
 
   <div id="results"></div>
 </main>
 
-<script>
-  const textarea = document.getElementById('code');
-  const btn = document.getElementById('analyze-btn');
-  const results = document.getElementById('results');
+<script type="module">
+  import { EditorState } from 'https://esm.sh/@codemirror/state@6'
+  import { EditorView, keymap, lineNumbers, highlightActiveLine,
+           highlightActiveLineGutter, bracketMatching,
+           placeholder } from 'https://esm.sh/@codemirror/view@6'
+  import { defaultKeymap, indentWithTab } from 'https://esm.sh/@codemirror/commands@6'
+  import { python } from 'https://esm.sh/@codemirror/lang-python@6'
+  import { indentOnInput, HighlightStyle,
+           syntaxHighlighting } from 'https://esm.sh/@codemirror/language@6'
+  import { tags } from 'https://esm.sh/@lezer/highlight@1'
 
-  textarea.addEventListener('input', () => {
-    btn.disabled = !textarea.value.trim();
-  });
+  const catppuccinTheme = EditorView.theme({
+    '&': {
+      background: '#181825',
+      color: '#cdd6f4',
+      height: '220px',
+      fontFamily: "'Cascadia Code', 'Fira Code', 'Consolas', monospace",
+      fontSize: '0.88rem',
+      borderRadius: '8px',
+      border: '1px solid #313244',
+    },
+    '&.cm-focused': { border: '1px solid #89b4fa', outline: 'none' },
+    '.cm-content': { padding: '16px', lineHeight: '1.6', caretColor: '#89b4fa' },
+    '.cm-scroller': { overflow: 'auto', borderRadius: '8px' },
+    '.cm-gutters': {
+      background: '#1e1e2e',
+      borderRight: '1px solid #313244',
+      color: '#585b70',
+      padding: '0 4px',
+    },
+    '.cm-activeLineGutter': { background: '#1e1e2e', color: '#a6adc8' },
+    '.cm-activeLine': { background: 'rgba(49, 50, 68, 0.3)' },
+    '.cm-selectionBackground': { background: '#313244 !important' },
+    '&.cm-focused .cm-selectionBackground': { background: '#313244 !important' },
+    '.cm-cursor': { borderLeftColor: '#89b4fa' },
+    '.cm-placeholder': { color: '#585b70' },
+  }, { dark: true })
+
+  const catppuccinHighlight = HighlightStyle.define([
+    { tag: tags.keyword,         color: '#cba6f7' },
+    { tag: tags.definitionKeyword, color: '#cba6f7' },
+    { tag: tags.controlKeyword,  color: '#cba6f7' },
+    { tag: tags.moduleKeyword,   color: '#cba6f7' },
+    { tag: [tags.function(tags.variableName), tags.function(tags.propertyName)], color: '#89b4fa' },
+    { tag: tags.definition(tags.variableName), color: '#89b4fa' },
+    { tag: tags.number,          color: '#fab387' },
+    { tag: tags.string,          color: '#a6e3a1' },
+    { tag: tags.comment,         color: '#585b70', fontStyle: 'italic' },
+    { tag: tags.operator,        color: '#89dceb' },
+    { tag: tags.punctuation,     color: '#cdd6f4' },
+    { tag: tags.variableName,    color: '#cdd6f4' },
+    { tag: [tags.bool, tags.null], color: '#fab387' },
+  ])
+
+  const btn = document.getElementById('analyze-btn')
+  const results = document.getElementById('results')
+
+  const editor = new EditorView({
+    state: EditorState.create({
+      doc: '',
+      extensions: [
+        lineNumbers(),
+        highlightActiveLine(),
+        highlightActiveLineGutter(),
+        bracketMatching(),
+        indentOnInput(),
+        keymap.of([
+          ...defaultKeymap,
+          indentWithTab,
+          { key: 'Ctrl-Enter', run: () => { if (!btn.disabled) btn.click(); return true } },
+        ]),
+        python(),
+        syntaxHighlighting(catppuccinHighlight),
+        placeholder('def bubble_sort(arr):\n    for i in range(len(arr)):\n        for j in range(len(arr) - i - 1):\n            if arr[j] > arr[j + 1]:\n                arr[j], arr[j + 1] = arr[j + 1], arr[j]'),
+        catppuccinTheme,
+        EditorView.updateListener.of(update => {
+          if (update.docChanged) {
+            btn.disabled = editor.state.doc.toString().trim() === ''
+          }
+        }),
+      ],
+    }),
+    parent: document.getElementById('editor'),
+  })
 
   btn.addEventListener('click', async () => {
-    btn.disabled = true;
-    btn.textContent = 'Analyzing...';
-    results.innerHTML = '';
+    btn.disabled = true
+    btn.textContent = 'Analyzing...'
+    results.innerHTML = ''
 
     try {
       const resp = await fetch('/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ source: textarea.value }),
-      });
+        body: JSON.stringify({ source: editor.state.doc.toString() }),
+      })
 
-      const data = await resp.json();
+      const data = await resp.json()
 
       if (!resp.ok) {
         if (resp.status === 400) {
-          showBanner('error', `Syntax error on line ${data.detail.line}: ${data.detail.message}`);
+          showBanner('error', `Syntax error on line ${data.detail.line}: ${data.detail.message}`)
         } else {
-          showBanner('error', 'An unexpected error occurred. Please try again.');
+          showBanner('error', 'An unexpected error occurred. Please try again.')
         }
-        return;
+        return
       }
 
       if (data.length === 0) {
-        showBanner('info', 'No function definitions found. Make sure your code contains at least one def (async def is not supported in this version).');
-        return;
+        showBanner('info', 'No function definitions found. Make sure your code contains at least one def (async def is not supported in this version).')
+        return
       }
 
-      const label = document.createElement('div');
-      label.className = 'results-label';
-      label.textContent = `Results — ${data.length} function${data.length !== 1 ? 's' : ''} found`;
-      results.appendChild(label);
+      const label = document.createElement('div')
+      label.className = 'results-label'
+      label.textContent = `Results — ${data.length} function${data.length !== 1 ? 's' : ''} found`
+      results.appendChild(label)
 
-      data.forEach(fn => results.appendChild(buildCard(fn)));
+      data.forEach(fn => results.appendChild(buildCard(fn)))
 
     } catch {
-      showBanner('error', 'Could not reach the server. Is the backend running?');
+      showBanner('error', 'Could not reach the server. Is the backend running?')
     } finally {
-      btn.disabled = !textarea.value.trim();
-      btn.textContent = 'Analyze →';
+      btn.disabled = editor.state.doc.toString().trim() === ''
+      btn.textContent = 'Analyze →'
     }
-  });
+  })
 
   function buildCard(fn) {
-    const card = document.createElement('div');
-    card.className = 'fn-card';
+    const card = document.createElement('div')
+    card.className = 'fn-card'
 
-    const name = document.createElement('div');
-    name.className = 'fn-name';
-    name.textContent = `def ${fn.name}(...)`;
+    const name = document.createElement('div')
+    name.className = 'fn-name'
+    name.textContent = `def ${fn.name}(...)`
 
-    const badges = document.createElement('div');
-    badges.className = 'badges';
-    badges.appendChild(buildBadge('time', 'Time', fn.time_complexity));
-    badges.appendChild(buildBadge('space', 'Space', fn.space_complexity));
+    const badges = document.createElement('div')
+    badges.className = 'badges'
+    badges.appendChild(buildBadge('time', 'Time', fn.time_complexity))
+    badges.appendChild(buildBadge('space', 'Space', fn.space_complexity))
 
-    const explanation = document.createElement('div');
-    explanation.className = 'explanation';
-    explanation.textContent = fn.explanation;
+    const explanation = document.createElement('div')
+    explanation.className = 'explanation'
+    explanation.textContent = fn.explanation
 
-    card.appendChild(name);
-    card.appendChild(badges);
-    card.appendChild(explanation);
-    return card;
+    card.appendChild(name)
+    card.appendChild(badges)
+    card.appendChild(explanation)
+    return card
   }
 
   function buildBadge(type, label, value) {
-    const badge = document.createElement('div');
-    badge.className = `badge-complexity badge-${type}`;
+    const badge = document.createElement('div')
+    badge.className = `badge-complexity badge-${type}`
 
-    const lbl = document.createElement('span');
-    lbl.className = 'badge-label';
-    lbl.textContent = label;
+    const lbl = document.createElement('span')
+    lbl.className = 'badge-label'
+    lbl.textContent = label
 
-    badge.appendChild(lbl);
-    badge.appendChild(document.createTextNode(value));
-    return badge;
+    badge.appendChild(lbl)
+    badge.appendChild(document.createTextNode(value))
+    return badge
   }
 
   function showBanner(type, message) {
-    const banner = document.createElement('div');
-    banner.className = `banner banner-${type}`;
-    banner.textContent = message;
-    results.appendChild(banner);
+    const banner = document.createElement('div')
+    banner.className = `banner banner-${type}`
+    banner.textContent = message
+    results.appendChild(banner)
   }
 </script>
 
