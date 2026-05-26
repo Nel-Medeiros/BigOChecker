@@ -264,7 +264,7 @@
            placeholder } from 'https://esm.sh/@codemirror/view@6'
   import { defaultKeymap, indentWithTab } from 'https://esm.sh/@codemirror/commands@6'
   import { python } from 'https://esm.sh/@codemirror/lang-python@6'
-  import { indentOnInput, HighlightStyle,
+  import { indentOnInput, indentUnit, HighlightStyle,
            syntaxHighlighting } from 'https://esm.sh/@codemirror/language@6'
   import { tags } from 'https://esm.sh/@lezer/highlight@1'
 
@@ -322,6 +322,7 @@
         highlightActiveLine(),
         highlightActiveLineGutter(),
         bracketMatching(),
+        indentUnit.of('    '),
         indentOnInput(),
         keymap.of([
           ...defaultKeymap,
