@@ -10,7 +10,7 @@ app = FastAPI(title="BigO Checker")
 
 
 class AnalyzeRequest(BaseModel):
-    source: str = Field(min_length=1)
+    source: str = Field(min_length=1, max_length=50_000)
 
     @field_validator("source")
     @classmethod
@@ -21,7 +21,7 @@ class AnalyzeRequest(BaseModel):
 
 
 @app.post("/analyze", response_model=list[FunctionResult])
-async def analyze_endpoint(request: AnalyzeRequest) -> list[FunctionResult]:
+def analyze_endpoint(request: AnalyzeRequest) -> list[FunctionResult]:
     try:
         return analyze(request.source)
     except PythonSyntaxError as e:
