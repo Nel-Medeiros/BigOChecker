@@ -2,8 +2,6 @@
 
 A web app that analyzes Python algorithms for **time and space complexity** using static AST inspection. Paste your code, click Analyze, and get the Big O notation for every function — with a plain-English explanation.
 
-![BigO Checker UI](docs/screenshot.png)
-
 ## Features
 
 - Analyzes all top-level `def` functions in one paste
